@@ -2,8 +2,12 @@ package mac_array;
 import mac_row::*;
 import Vector :: * ;
 
+interface Ifc_conv;
+method Action top_cnn_input(Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
+endinterface
+
 (*synthesize*)
-module mkmac_array(Empty);
+module mkmac_array(Ifc_conv);
      Ifc_mac_row mac_r1 <- mkmac_row();
      Ifc_mac_row mac_r2 <- mkmac_row();
      Ifc_mac_row mac_r3 <- mkmac_row();
@@ -30,47 +34,29 @@ weight4[1]<- mkReg(0);
 weight4[2]<- mkReg(0);
 weight4[3]<- mkReg(0);
 
-Vector#(32, Reg#(Bit#(32))) _input <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) _input <- replicateM( mkReg( 0 ) );
 _input[0]<-mkReg(3);
 _input[1]<- mkReg(9);
 _input[2]<- mkReg(2);
 _input[3]<-mkReg(8);
-_input[4]<-mkReg(0);
-_input[5]<-mkReg(0);
-_input[6]<-mkReg(0);
-_input[7]<-mkReg(0);
 
-Vector#(32, Reg#(Bit#(32))) _input2 <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) _input2 <- replicateM( mkReg( 0 ) );
 _input2[0] <-mkReg(9);
 _input2[1]<- mkReg(0);
 _input2[2]<- mkReg(8);
 _input2[3]<-mkReg(1);
-_input2[4]<-mkReg(0);
-_input2[5]<-mkReg(0);
-_input2[6]<-mkReg(0);
-_input2[7]<-mkReg(0);
 
-Vector#(32, Reg#(Bit#(32))) _input3 <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) _input3 <- replicateM( mkReg( 0 ) );
 _input3[0] <-mkReg(2);
 _input3[1]<- mkReg(8);
 _input3[2]<- mkReg(1);
 _input3[3]<-mkReg(4);
-_input3[4]<-mkReg(0);
-_input3[5]<-mkReg(0);
-_input3[6]<-mkReg(0);
-_input3[7]<-mkReg(0);
-_input3[8]<-mkReg(0);
 
-Vector#(32, Reg#(Bit#(32))) _input4 <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) _input4 <- replicateM( mkReg( 0 ) );
 _input4[0] <-mkReg(8);
 _input4[1]<- mkReg(1);
 _input4[2]<- mkReg(4);
 _input4[3]<-mkReg(8);
-_input4[4]<-mkReg(0);
-_input4[5]<-mkReg(0);
-_input4[6]<-mkReg(0);
-_input4[7]<-mkReg(0);
-_input4[8]<-mkReg(0);
 
 
 Vector#(4, Reg#(Bit#(32))) psum_in <- replicateM( mkReg( 0 ) );
@@ -147,6 +133,20 @@ Reg#(Bit#(1)) rg_psum_received <- mkReg(0);
      psum_out3[3] <= mac_r4.give(3);
      $display("TB4 output %0d   %0d    %0d", psum_out3[0], psum_out3[1], psum_out3[2], psum_out3[3]);
      endrule
+
+     method Action top_cnn_input(Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
+        writeVReg(weight,_weight1);
+        writeVReg(weight2,_weight2);
+        writeVReg(weight3,_weight3);
+        writeVReg(weight4,_weight4);
+
+        writeVReg(_input,in1);
+        writeVReg(_input2,in2);
+        writeVReg(_input3,in3);
+        writeVReg(_input4,in4);
+   endmethod
+
+
 endmodule: mkmac_array
 
 endpackage:mac_array
