@@ -6,7 +6,7 @@ import FIFO ::*;
 interface Ifc_mac_row;
 method Action take_input(Vector#(4, Reg#(Bit#(32))) weight1, Vector#(4, Reg#(Bit#(32))) psum_in1);
 method Bit#(32) give(int index);
-method Action load_input(  Vector#(32, Reg#(Bit#(32))) input1);
+method Action load_input(  Vector#(4, Reg#(Bit#(32))) input1);
 endinterface
 
 
@@ -37,17 +37,17 @@ Vector#(4, Reg#(Bit#(32))) psum_out <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(32))) weight  <- replicateM( mkReg( 0 ) );// Initialize an 8-element array with specific values
 
 
-Vector#(32, Reg#(Bit#(32))) _input<- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) _input<- replicateM( mkReg( 0 ) );
 Reg#(UInt#(8))  n      <- mkReg(0);
 FIFO#(Bit#(32))  inputFifo <-  mkSizedFIFO(32);
 Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
   rule count_cycles;
       cycle <= cycle + 1;
-      if (cycle > 16) $finish(0);
+      if (cycle > 17) $finish(0);
    endrule
    
-   rule loop (n <= 32  && cycle>0);
-    
+   rule loop (n < 4  && cycle>1);
+    //$display("%0d fifo",_input[n]);
     inputFifo.enq(_input[n]);
     n<=n+1;
   endrule
@@ -79,8 +79,7 @@ Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
     let q <-mac2.mav_psumout(pack(w12),pack(a12),pack(psum_in12));
     let r <-mac3.mav_psumout(pack(w13),pack(a13),pack(psum_in13));
     let s <-mac4.mav_psumout(pack(w14),pack(a14),pack(psum_in14));
-
-   // $display("%0d psum out %0d %0d %0d %0d",cycle, p, q, r, s);
+//   $display("%0d psum out %0d %0d %0d %0d",cycle, p, q, r, s);
     psum_out[0]<= pack(p);
     psum_out[1]<= pack(q);
     psum_out[2]<= pack(r);
@@ -100,8 +99,8 @@ Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
       psum_in13 <= psum_in1[2];
       psum_in14 <= psum_in1[3];
     endmethod
-   method Action load_input(Vector#(32, Reg#(Bit#(32))) input1);
-   for( int i=0;i<32;i=i+1) begin
+   method Action load_input(Vector#(4, Reg#(Bit#(32))) input1);
+   for( int i=0;i<4;i=i+1) begin
            
        _input[i]<=input1[i];
        end

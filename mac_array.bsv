@@ -13,50 +13,15 @@ module mkmac_array(Ifc_conv);
      Ifc_mac_row mac_r3 <- mkmac_row();
      Ifc_mac_row mac_r4 <- mkmac_row();
 
-Vector#(4, Reg#(Bit#(32))) weight  <- replicateM( mkReg( 8 ) );
-weight[1]<- mkReg(0);
-weight[2]<- mkReg(0);
-weight[3] <- mkReg(0);
-
-
-Vector#(4, Reg#(Bit#(32))) weight2  <- replicateM( mkReg( 9 ) );
-weight2[1]<- mkReg(0);
-weight2[2]<- mkReg(0);
-weight2[3]<- mkReg(0);
-
-Vector#(4, Reg#(Bit#(32))) weight3  <- replicateM( mkReg( 4 ) );
-weight3[1]<- mkReg(0);
-weight3[2]<- mkReg(0);
-weight3[3]<- mkReg(0);
-
-Vector#(4, Reg#(Bit#(32))) weight4  <- replicateM( mkReg( 4 ) );
-weight4[1]<- mkReg(0);
-weight4[2]<- mkReg(0);
-weight4[3]<- mkReg(0);
+Vector#(4, Reg#(Bit#(32))) weight  <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) weight2  <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) weight3  <- replicateM( mkReg( 0 ) );
+Vector#(4, Reg#(Bit#(32))) weight4  <- replicateM( mkReg( 0 ) );
 
 Vector#(4, Reg#(Bit#(32))) _input <- replicateM( mkReg( 0 ) );
-_input[0]<-mkReg(3);
-_input[1]<- mkReg(9);
-_input[2]<- mkReg(2);
-_input[3]<-mkReg(8);
-
 Vector#(4, Reg#(Bit#(32))) _input2 <- replicateM( mkReg( 0 ) );
-_input2[0] <-mkReg(9);
-_input2[1]<- mkReg(0);
-_input2[2]<- mkReg(8);
-_input2[3]<-mkReg(1);
-
 Vector#(4, Reg#(Bit#(32))) _input3 <- replicateM( mkReg( 0 ) );
-_input3[0] <-mkReg(2);
-_input3[1]<- mkReg(8);
-_input3[2]<- mkReg(1);
-_input3[3]<-mkReg(4);
-
 Vector#(4, Reg#(Bit#(32))) _input4 <- replicateM( mkReg( 0 ) );
-_input4[0] <-mkReg(8);
-_input4[1]<- mkReg(1);
-_input4[2]<- mkReg(4);
-_input4[3]<-mkReg(8);
 
 
 Vector#(4, Reg#(Bit#(32))) psum_in <- replicateM( mkReg( 0 ) );
