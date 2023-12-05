@@ -1,5 +1,6 @@
 import Vector ::*;
 import mac_array ::*;
+import pooling ::*;
 
 typedef struct { 
     Vector#(4, Bit#(32)) w; 
@@ -79,11 +80,19 @@ Reg#(int) c2 <- mkReg(0);
  Int#(32) input_data[3][3] = {{3,9,0},
                      {2,8,1},
                      {1,4,8}};
+Int#(32) input_data1[4][4] = {{31,7,44,33},
+                     {65,35,40,46},
+                     {46,29,32,30},
+                     {24,49,8,64}};
  Int#(32) weight_kernel[2][2] = {{8,9},
                                   {4,4}};
 Inps i1;
 i1=im2col(input_data, weight_kernel);
-
+Int#(32) bb[4];
+bb=max_pooling(input_data1);
+rule hjhj;
+  $display("POOLING %0d %0d %0d %0d", bb[0], bb[1], bb[2], bb[3]);
+  endrule
 rule ghjgj;
  systolic.top_cnn_input(i1.w1,i1.w2,i1.w3,i1.w4,i1.w,i1.x,i1.y,i1.z);
 endrule
