@@ -1,0 +1,249 @@
+TB3 output 0   0    0
+0 psum out 0 0 0
+0 ... weight 0 0 0
+tb2 output 0   0    0
+0 psum out 0 0 0
+0 ... weight 0 0 0
+tb output 0   0    0 0
+0 psum out 0 0 0
+0 ... weight 0 0 0
+TB3 output 0   0    0
+1 psum out 0 0 0
+1 ... weight 0 0 0
+tb2 output 0   0    0
+1 psum out 0 0 0
+1 ... weight 0 0 0
+tb output 0   0    0 0
+1 psum out 0 0 0
+1 ... weight 0 0 0
+TB3 output 0   0    0
+2 psum out 0 0 0
+2 ... weight 0 0 0
+tb2 output 0   0    0
+2 psum out 0 0 0
+2 ... weight 0 0 0
+tb output 0   0    0 0
+2 psum out 0 0 0
+2 ... weight 1 4 7
+2 .... input 0 0 0
+TB3 output 0   0    0
+3 psum out 0 0 0
+3 ... weight 0 0 0
+tb2 output 0   0    0
+3 psum out 0 0 0
+3 ... weight 0 0 0
+tb output 0   0    0 0
+3 psum out 10 0 0
+3 ... weight 1 4 7
+3 .... input 10 0 0
+TB3 output 0   0    0
+4 psum out 0 0 0
+4 ... weight 0 0 0
+tb2 output 0   0    0
+4 psum out 0 0 0
+4 ... weight 0 0 0
+tb output 0   0    0 0
+4 psum out 11 40 0
+4 ... weight 1 4 7
+4 .... input 11 10 0
+TB3 output 0   0    0
+5 psum out 0 0 0
+5 ... weight 0 0 0
+tb2 output 0   0    0
+5 psum out 0 0 0
+5 ... weight 0 0 0
+5 .... input 0 0 0
+tb output 10   0    0 0
+5 psum out 12 44 70
+5 ... weight 1 4 7
+5 .... input 12 11 10
+TB3 output 0   0    0
+6 psum out 0 0 0
+6 ... weight 0 0 0
+tb2 output 0   0    0
+6 psum out 36 0 0
+6 ... weight 2 5 8
+6 .... input 13 0 0
+tb output 11   40    0 0
+6 psum out 0 48 77
+6 ... weight 1 4 7
+6 .... input 0 12 11
+TB3 output 0   0    0
+7 psum out 0 0 0
+7 ... weight 0 0 0
+tb2 output 0   0    0
+7 psum out 39 105 0
+7 ... weight 2 5 8
+7 .... input 14 13 0
+tb output 12   44    70 0
+7 psum out 0 0 84
+7 ... weight 1 4 7
+7 .... input 0 0 12
+TB3 output 0   0    0
+8 psum out 0 0 0
+8 ... weight 0 0 0
+8 .... input 0 0 0
+tb2 output 36   0    0
+8 psum out 41 110 104
+8 ... weight 2 5 8
+8 .... input 15 14 13
+tb output 0   48    77 0
+8 psum out 0 0 0
+8 ... weight 1 4 7
+8 .... input 0 0 0
+TB3 output 0   0    0
+9 psum out 84 0 0
+9 ... weight 3 6 9
+9 .... input 16 0 0
+tb2 output 39   105    0
+9 psum out 11 115 112
+9 ... weight 2 5 8
+9 .... input 0 15 14
+tb output 0   0    84 0
+9 psum out 0 0 0
+9 ... weight 1 4 7
+9 .... input 0 0 0
+TB3 output 0   0    0
+10 psum out 90 201 0
+10 ... weight 3 6 9
+10 .... input 17 16 0
+tb2 output 41   110    104
+10 psum out 11 40 120
+10 ... weight 2 5 8
+10 .... input 0 0 15
+tb output 0   0    0 0
+10 psum out 0 0 0
+10 ... weight 1 4 7
+10 .... input 0 0 0
+TB3 output 84   0    0
+11 psum out 95 212 248
+11 ... weight 3 6 9
+11 .... input 18 17 16
+tb2 output 11   115    112
+11 psum out 11 40 0
+11 ... weight 2 5 8
+11 .... input 0 0 0
+tb output 0   0    0 0
+11 psum out 0 0 0
+11 ... weight 1 4 7
+11 .... input 0 0 0
+TB3 output 90   201    0
+12 psum out 11 223 265
+12 ... weight 3 6 9
+12 .... input 0 18 17
+tb2 output 11   40    120
+12 psum out 11 40 0
+12 ... weight 2 5 8
+12 .... input 0 0 0
+tb output 0   0    0 0
+12 psum out 0 0 0
+12 ... weight 1 4 7
+12 .... input 0 0 0
+TB3 output 95   212    248
+13 psum out 11 40 282
+13 ... weight 3 6 9
+13 .... input 0 0 18
+tb2 output 11   40    0
+13 psum out 11 40 0
+13 ... weight 2 5 8
+13 .... input 0 0 0
+tb output 0   0    0 0
+13 psum out 0 0 0
+13 ... weight 1 4 7
+13 .... input 0 0 0
+TB3 output 11   223    265
+14 psum out 11 40 0
+14 ... weight 3 6 9
+14 .... input 0 0 0
+tb2 output 11   40    0
+14 psum out 11 40 0
+14 ... weight 2 5 8
+14 .... input 0 0 0
+tb output 0   0    0 0
+14 psum out 0 0 0
+14 ... weight 1 4 7
+14 .... input 0 0 0
+TB3 output 11   40    282
+15 psum out 11 40 0
+15 ... weight 3 6 9
+15 .... input 0 0 0
+tb2 output 11   40    0
+15 psum out 11 40 0
+15 ... weight 2 5 8
+15 .... input 0 0 0
+tb output 0   0    0 0
+15 psum out 0 0 0
+15 ... weight 1 4 7
+15 .... input 0 0 0
+TB3 output 11   40    0
+16 psum out 11 40 0
+16 ... weight 3 6 9
+16 .... input 0 0 0
+tb2 output 11   40    0
+16 psum out 11 40 0
+16 ... weight 2 5 8
+16 .... input 0 0 0
+tb output 0   0    0 0
+16 psum out 0 0 0
+16 ... weight 1 4 7
+16 .... input 0 0 0
+TB3 output 11   40    0
+17 psum out 11 40 0
+17 ... weight 3 6 9
+17 .... input 0 0 0
+tb2 output 11   40    0
+17 psum out 11 40 0
+17 ... weight 2 5 8
+17 .... input 0 0 0
+tb output 0   0    0 0
+17 psum out 0 0 0
+17 ... weight 1 4 7
+17 .... input 0 0 0
+TB3 output 11   40    0
+18 psum out 11 40 0
+18 ... weight 3 6 9
+18 .... input 0 0 0
+tb2 output 11   40    0
+18 psum out 11 40 0
+18 ... weight 2 5 8
+18 .... input 0 0 0
+tb output 0   0    0 0
+18 psum out 0 0 0
+18 ... weight 1 4 7
+18 .... input 0 0 0
+TB3 output 11   40    0
+19 psum out 11 40 0
+19 ... weight 3 6 9
+19 .... input 0 0 0
+tb2 output 11   40    0
+19 psum out 11 40 0
+19 ... weight 2 5 8
+19 .... input 0 0 0
+tb output 0   0    0 0
+19 psum out 0 0 0
+19 ... weight 1 4 7
+19 .... input 0 0 0
+TB3 output 11   40    0
+20 psum out 11 40 0
+20 ... weight 3 6 9
+20 .... input 0 0 0
+tb2 output 11   40    0
+20 psum out 11 40 0
+20 ... weight 2 5 8
+20 .... input 0 0 0
+tb output 0   0    0 0
+20 psum out 0 0 0
+20 ... weight 1 4 7
+20 .... input 0 0 0
+TB3 output 11   40    0
+21 psum out 11 40 0
+21 ... weight 3 6 9
+21 .... input 0 0 0
+tb2 output 11   40    0
+21 psum out 11 40 0
+21 ... weight 2 5 8
+21 .... input 0 0 0
+tb output 0   0    0 0
+21 psum out 0 0 0
+21 ... weight 1 4 7
+21 .... input 0 0 0
