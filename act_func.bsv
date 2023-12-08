@@ -4,4 +4,5 @@ function Bit#(32) act_relu(Bit#(32) input)
      out=in;
      else
      out=0;
+     return out;
      endfunction 
