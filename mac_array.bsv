@@ -3,7 +3,7 @@ import mac_row::*;
 import Vector :: * ;
 
 interface Ifc_conv;
-method Action top_cnn_input(Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
+method Action top_cnn_input(Bool load, Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
 endinterface
 
 (*synthesize*)
@@ -29,14 +29,14 @@ Vector#(4, Reg#(Bit#(32))) psum_out <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(32))) psum_out1 <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(32))) psum_out2 <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(32))) psum_out3 <- replicateM( mkReg( 0 ) );
-
+Reg#(Bool) input_load <- mkReg(False);
 Reg#(Bit#(1)) rg_psum_received <- mkReg(0); 
      rule array_weight;
      mac_r1.take_input(weight,psum_in);
      endrule
      
      rule row1_input;
-        mac_r1.load_input(_input);
+        mac_r1.load_input(_input, input_load);
      endrule
 
      rule getoutput;
@@ -52,7 +52,7 @@ Reg#(Bit#(1)) rg_psum_received <- mkReg(0);
      endrule
 
      rule row2_input;
-        mac_r2.load_input(_input2);
+        mac_r2.load_input(_input2, input_load);
      endrule
 
       rule getoutput2;
@@ -70,7 +70,7 @@ Reg#(Bit#(1)) rg_psum_received <- mkReg(0);
      endrule
      
      rule row3_input;
-        mac_r3.load_input(_input3);
+        mac_r3.load_input(_input3, input_load);
      endrule
 
      rule get_output3;
@@ -88,7 +88,7 @@ Reg#(Bit#(1)) rg_psum_received <- mkReg(0);
      endrule
      
      rule row4_input;
-        mac_r4.load_input(_input4);
+        mac_r4.load_input(_input4, input_load);
      endrule
 
      rule get_output4;
@@ -99,16 +99,17 @@ Reg#(Bit#(1)) rg_psum_received <- mkReg(0);
      $display("TB4 output %0d   %0d    %0d", psum_out3[0], psum_out3[1], psum_out3[2], psum_out3[3]);
      endrule
 
-     method Action top_cnn_input(Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
+     method Action top_cnn_input(Bool load, Vector#(4, Bit#(32)) _weight1, Vector#(4, Bit#(32)) _weight2, Vector#(4, Bit#(32)) _weight3, Vector#(4, Bit#(32)) _weight4, Vector#(4, Bit#(32)) in1, Vector#(4, Bit#(32)) in2, Vector#(4, Bit#(32)) in3, Vector#(4, Bit#(32)) in4);
         writeVReg(weight,_weight1);
         writeVReg(weight2,_weight2);
         writeVReg(weight3,_weight3);
         writeVReg(weight4,_weight4);
-
+         
         writeVReg(_input,in1);
         writeVReg(_input2,in2);
         writeVReg(_input3,in3);
         writeVReg(_input4,in4);
+        input_load<= load;
    endmethod
 
 

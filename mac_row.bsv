@@ -6,7 +6,7 @@ import FIFO ::*;
 interface Ifc_mac_row;
 method Action take_input(Vector#(4, Reg#(Bit#(32))) weight1, Vector#(4, Reg#(Bit#(32))) psum_in1);
 method Bit#(32) give(int index);
-method Action load_input(  Vector#(4, Reg#(Bit#(32))) input1);
+method Action load_input(  Vector#(4, Reg#(Bit#(32))) input1, Bool load);
 endinterface
 
 
@@ -41,13 +41,15 @@ Vector#(4, Reg#(Bit#(32))) _input<- replicateM( mkReg( 0 ) );
 Reg#(UInt#(8))  n      <- mkReg(0);
 FIFO#(Bit#(32))  inputFifo <-  mkSizedFIFO(32);
 Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
+Reg#(Bool) input_load <- mkReg(False);
+
   rule count_cycles;
       cycle <= cycle + 1;
-      if (cycle > 17) $finish(0);
+     // if (cycle > (3072)) $finish(0);
    endrule
    
-   rule loop (n < 4  && cycle>1);
-    //$display("%0d fifo",_input[n]);
+   rule loop (n < 4  && cycle>1 && input_load==True);
+   // $display("%0d fifo",_input[n]);
     inputFifo.enq(_input[n]);
     n<=n+1;
   endrule
@@ -58,7 +60,7 @@ Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
      w13<=pack(weight[2]);
      w14<=pack(weight[3]);
 
-    // $display("%0d ... weight %0d %0d %0d %0d",cycle, w11, w12, w13, w14);
+   //  $display("%0d ... weight %0d %0d %0d %0d",cycle, w11, w12, w13, w14);
 
     endrule
 
@@ -99,7 +101,8 @@ Reg#(Bit#(1)) rg_inputs_rx <- mkReg(0);
       psum_in13 <= psum_in1[2];
       psum_in14 <= psum_in1[3];
     endmethod
-   method Action load_input(Vector#(4, Reg#(Bit#(32))) input1);
+   method Action load_input(Vector#(4, Reg#(Bit#(32))) input1, Bool load);
+   input_load<=load;
    for( int i=0;i<4;i=i+1) begin
            
        _input[i]<=input1[i];
