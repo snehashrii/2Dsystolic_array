@@ -1,5 +1,5 @@
 import Vector ::*;
-import mac_array1 ::*;
+import mac_array ::*;
 import pooling ::*;
 import im2col_gemm ::*;
 import BRAM::*;
@@ -10,9 +10,16 @@ import FIFO::*;
 import FloatingPoint::*;
 import fpu_common::*;
 import padding::*;
+import RegFile::*;
+import fpu_convert_pipelined::*;
+
+`define a1 51
+  `define a2 52
+  `define a3 62
+  `define a4 63
 
 
-function BRAMRequest#(Bit#(12), Bit#(8)) makeRequest(Bool write, Bit#(12) addr, Bit#(8) data); 
+function BRAMRequest#(Bit#(12), Bit#(64)) makeRequest(Bool write, Bit#(12) addr, Bit#(64) data); 
 return BRAMRequest{ write: write,
 responseOnWrite:True,
 address: addr,
@@ -22,29 +29,42 @@ endfunction
 
 (*synthesize*)
 module top(Empty);
-    Ifc_conv systolic <- mkmac_array1();
+    Ifc_conv systolic <- mkmac_array();
+    Ifc_conv systolic1 <- mkmac_array();
     Vector#(32, Reg#(Bit#(32))) ff <-replicateM( mkReg( 0 ) );
     Reg#(int) c2 <- mkReg(0);
+     RegFile#(Bit#(12) , FloatingPoint#(11,52)) stimulus <- mkRegFileLoad("weights.txt", 0, 1024);
+     Reg#(Bit#(12)) read_index<-mkReg(0);
 
-    Vector#(4, FloatingPoint#(11,52)) _input ;
-    Vector#(4, FloatingPoint#(11,52)) _input2 ;
-    Vector#(4, FloatingPoint#(11,52)) _input3 ;
-    Vector#(4, FloatingPoint#(11,52)) _input4 ;
-    Vector#(4, FloatingPoint#(11,52)) _input5 ;
-    Vector#(4, FloatingPoint#(11,52)) _input6 ;
-    Vector#(4, FloatingPoint#(11,52)) _input7 ;
-    Vector#(4, FloatingPoint#(11,52)) _input8 ;
-    Vector#(4, FloatingPoint#(11,52)) _input9 ;
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input <- replicateM( mkReg( 0 ) ) ;
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input2 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input3 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input4 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input5 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input6 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input7 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input8 <- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) _input9 <- replicateM( mkReg( 0 ) );
 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w1<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w2<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w3<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w4<- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w5<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w6<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w7<- replicateM( mkReg( 0 ) ); 
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w8<- replicateM( mkReg( 0 ) );
+    Vector#(4, Reg#(FloatingPoint#(11,52))) w9<- replicateM( mkReg( 0 ) );
     BRAM_Configure cfg = defaultValue;
-    cfg.memorySize=3072;
+    cfg.memorySize=3073;
     cfg.allowWriteResponseBypass = False;
     cfg.loadFormat = tagged Hex "image0.txt";
-    BRAM2Port#(Bit#(12), Bit#(8)) dut1 <- mkBRAM2Server(cfg);
+    BRAM2Port#(Bit#(12), Bit#(64)) dut1 <- mkBRAM2Server(cfg);
     Reg#(int) i  <-  mkReg(0);
     Reg#(int) j  <-  mkReg(0);
     Reg#(int) k  <-  mkReg(0);
-    FIFOF#(Bit#(8))  inputdataFifo <-  mkSizedFIFOF(9);
+    Reg#(int) l_by_4 <- mkReg(0);
+    FIFOF#(FloatingPoint#(11,52))  inputdataFifo <-  mkSizedFIFOF(36);
     Reg#(Bool) load_done <- mkReg(False);
     FloatingPoint#(11,52) input_data[32][32] = {{59, 43, 50, 68, 98, 119, 139, 145, 149, 149, 131, 125, 142, 144, 137, 129, 137, 134, 124, 139, 139, 133, 136, 139, 152, 163, 168, 159, 158, 158, 152, 148},
                                  {16, 0, 18, 51, 88, 120, 128, 127, 126, 116, 106, 101, 105, 113, 109, 112, 119, 109, 105, 125, 127, 122, 131, 124, 121, 131, 132, 133, 133, 123, 119, 122}, 
@@ -82,69 +102,110 @@ module top(Empty);
                      {65,35,40,46},
                      {46,29,32,30},
                      {24,49,8,64}};
+    int input2[34][34];
     FloatingPoint#(11,52) weight_kernel[3][3] = {{0.0232,  0.0581,  0.0318},
                                       {-0.0473, -0.0891, -0.0865},
                                       { 0.0153,  0.0553,  0.0328}};
+                                      Reg#(int) input_count <- mkReg(0);
 Inps i1;
-input_data=zero_padding(input_data);
-i1=im2col(input_data, weight_kernel);
-//rule uihh;
-//for(int s=0;s<34;s=s+1) begin
-   //for(int r=0;r<34;r=r+1) begin
-     //  $display("%0h",input_data[1][r]);
-       //end
-       //$display("end of a row");
-       //end
-      // endrule
-for (int m=0;m<4;m=m+1) begin
-  _input[m]=i1.windows[0][m];
-  _input2[m]=i1.windows[1][m];
-  _input3[m]=i1.windows[2][m];
-  _input4[m]=i1.windows[3][m];
-  _input5[m]=i1.windows[4][m];
-  _input6[m]=i1.windows[5][m];
-  _input7[m]=i1.windows[6][m];
-  _input8[m]=i1.windows[7][m];
-  _input9[m]=i1.windows[8][m];
-  end
+input2=zero_padding(input_data);
+i1=im2col(input2, weight_kernel);
+int temp[36];
 
+for (int b=0;b<9;b=b+1) begin
+for (int m=0;m<4;m=m+1) begin
+  temp[b*4+m]=i1.windows[b][m];
+  end
+  end
+let fconv <- mk_fpu_int_to_dp();
 //Int#(32) bb[4];
 //bb=max_pooling(input_data1);
 //rule pool;
   //$display("POOLING %0d %0d %0d %0d", bb[0], bb[1], bb[2], bb[3]);
   //endrule
-
-rule datain (i<3072);
-          Bit#(12) data_addr = truncate(pack(i));
+rule datain (i<36);
+          Bit#(12) data_addr = truncate(pack(temp[i]));
+         // $display("data addr %d", data_addr);
           dut1.portA.request.put(makeRequest(False, data_addr, 0));
           i<=i+1;
        endrule
-
+rule weights (read_index<9);
+    let _e = stimulus.sub(read_index);
+   // $display("weights %0h", _e);
+    case(read_index) matches
+    0: w1[0]<=_e;
+    1: w2[0]<=_e;
+    2: w3[0]<=_e;
+    3: w4[0]<=_e;
+    4: w5[0]<=_e;
+    5: w6[0]<=_e;
+    6: w7[0]<=_e;
+    7: w8[0]<=_e;
+    8: w9[0]<=_e;
+    endcase
+    read_index<=read_index+1;
+    endrule
 rule dataout  ;
-         
-          let data1 <- dut1.portA.response.get;
-          //$display("%0d dut1read[0] = %x : loading ... %0d",j, data1, load_done);
-          inputdataFifo.enq(pack(data1));
+          let data1<- dut1.portA.response.get;
+          
+        //  $display("%0d dut1read[0] = %h : loading ... %0d",j, data1, load_done);
+          fconv.start (data1, 1'b1, 1'b1, 3'b000);
           j<=j+1;
-          if (j>=3071) load_done<=True;
+          if (j>=35) load_done<=True;
        endrule
+rule jhjg(j>1);
+  let x =  fconv.receive();  
+      let valid = x.valid;
+      let out = x.value;
+      let flags = x.ex;
+  Bit#(64) _out = {pack(out.sign), out.exp, out.sfd}; 
+  let data2=FloatingPoint{sign : unpack(_out[`a4]), exp: _out[`a3:`a2], sfd: _out[`a1:0]};  
+  //$display("tell me this works %0h", _out);
+  inputdataFifo.enq(data2);
+  endrule
 
-//rule jhjkh;
-  //$display("loading... %0d", load_done);
-//endrule
-
-rule clearing_fifo ( !inputdataFifo.notFull);
-   inputdataFifo.clear();
+rule clearing_fifo /*( !inputdataFifo.notFull)*/;
+   //$display("data from bram %0h",inputdataFifo.first);
+   if (input_count<4)
+       _input[input_count]<=inputdataFifo.first;
+   else if (input_count<8)
+       _input2[input_count-4]<=inputdataFifo.first;
+   else if (input_count<12)
+       _input3[input_count-8]<=inputdataFifo.first;
+   else if (input_count<16)
+       _input4[input_count-12]<=inputdataFifo.first;
+   else if (input_count<20)
+       _input5[input_count-16]<=inputdataFifo.first;
+   else if (input_count<24)
+       _input6[input_count-20]<=inputdataFifo.first;
+   else if (input_count<28)
+       _input7[input_count-24]<=inputdataFifo.first;
+   else if (input_count<32)
+       _input8[input_count-28]<=inputdataFifo.first;
+   else if (input_count<36)
+       _input9[input_count-32]<=inputdataFifo.first;
+   inputdataFifo.deq();
+   // inputdataFifo.clear();
+   input_count<=input_count+1;
    endrule
 
 //(*fire_when_enabled*)
-rule computation_engine (load_done==True);
+rule computation_engine (load_done==True );
   k<=k+1;
- // $display("SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h", _input[0], _input2[0], _input3[0], _input4[0], _input5[0], _input6[0], _input7[0], _input8[0], _input9[0]);
-  systolic.top_cnn_input(True, i1.w1,i1.w2,i1.w3,i1.w4,i1.w5,i1.w6,i1.w7,i1.w8,i1.w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
-  if (k>400) $finish(0);
+  //$display("SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0], w2[0], w3[0], w4[0], w5[0], w6[0], w7[0],w8[0], w9[0]);
+  
+  systolic.top_cnn_input(True, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
+  //$display("LESS GO %0d", k);
+  if (k>149) $finish(0);
 endrule
-
-
-
+ 
+/* rule ce2(load_done==True && k<150 && l_by_4==1);
+   k<=k+1;
+  systolic1.top_cnn_input(True, i1.w1,i1.w2,i1.w3,i1.w4,i1.w5,i1.w6,i1.w7,i1.w8,i1.w9,window_by_4(l_by_4,i1.windows,0),window_by_4(l_by_4,i1.windows,1),window_by_4(l_by_4,i1.windows,2),window_by_4(l_by_4,i1.windows,3),window_by_4(l_by_4,i1.windows,4),window_by_4(l_by_4,i1.windows,5),window_by_4(l_by_4,i1.windows,6),window_by_4(l_by_4,i1.windows,7),window_by_4(l_by_4,i1.windows,8));
+ // $display("LESS GO %0d", k);
+  if (k>149) begin
+   l_by_4<=l_by_4+1;
+   k<=0;
+   end
+endrule*/
 endmodule

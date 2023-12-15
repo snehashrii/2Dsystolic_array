@@ -5,23 +5,15 @@ import fpu_common::*;
 import FloatingPoint::*;
 
 typedef struct { 
-    Array#(Array#(FloatingPoint#(11,52))) windows;
-    Vector#(4, FloatingPoint#(11,52)) w1; 
-    Vector#(4, FloatingPoint#(11,52)) w2; 
-    Vector#(4, FloatingPoint#(11,52)) w3; 
-    Vector#(4, FloatingPoint#(11,52)) w4;
-    Vector#(4, FloatingPoint#(11,52)) w5; 
-    Vector#(4, FloatingPoint#(11,52)) w6; 
-    Vector#(4, FloatingPoint#(11,52)) w7; 
-    Vector#(4, FloatingPoint#(11,52)) w8;
-    Vector#(4, FloatingPoint#(11,52)) w9;} Inps deriving  (Bits);
+    Array#(Array#(int)) windows;
+    } Inps deriving  (Bits);
 
-function Inps im2col(FloatingPoint#(11,52) input_data[][], FloatingPoint#(11,52) weight_kernel[][]) provisos(Bitwise#(Bit#(32)));
+function Inps im2col(int input_data[][], FloatingPoint#(11,52) weight_kernel[][]) provisos(Bitwise#(Bit#(32)));
 Inps h;
 int i, j,k,l,m, count, irow;
 count=0;
 irow=0;
-FloatingPoint#(11,52) input1[9], input2[9][1024];
+int input1[9], input2[9][1024];
 for (i=0;i<32;i=i+1) begin
    for(j=0;j<32;j=j+1) begin 
      for(k=i;k<i+3;k=k+1)  begin
@@ -58,7 +50,7 @@ for (i=0;i<3;i=i+1) begin
         end
         end
 
-   h.w1[0]=flat_kernel[0];
+   /*h.w1[0]=flat_kernel[0];
    h.w1[1]=0;
    h.w1[2]=0;
    h.w1[3]=0;
@@ -93,7 +85,7 @@ for (i=0;i<3;i=i+1) begin
    h.w9[0]=flat_kernel[8];
    h.w9[1]=0;
    h.w9[2]=0;
-   h.w9[3]=0;
+   h.w9[3]=0;*/
 
 
 

@@ -75,7 +75,7 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
      a12<=a11;
      a13<=a12;
      a14<=a13;
-    // $display(".... input %0h %0h %0h %0h", a11, a12, a13, a14);
+    //$display(".... input %0h %0h %0h %0h", a11, a12, a13, a14);
      inputFifo.deq;
     endrule
 
@@ -86,7 +86,7 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
     let q <-mac2.mav_psumout(w12,a12,psum_in12);
     let r <-mac3.mav_psumout(w13,a13,psum_in13);
     let s <-mac4.mav_psumout(w14,a14,psum_in14);
-    $display(" psum out %0h %0h %0h %0h", p, w11,a11,psum_in11);
+   // $display(" psum out %0h %0h %0h %0h", p, w11,a11,psum_in11);
     psum_out[0]<= pack(p);
     psum_out[1]<= pack(q);
     psum_out[2]<= pack(r);
@@ -97,7 +97,7 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
      
      if (rg_cycle>12) begin
         _ready<=True;
-        $display("psum is it ? %d %d", rg_cycle, _ready);
+       // $display("psum is it ? %d %d", rg_cycle, _ready);
         end
      else
        rg_cycle<=rg_cycle+1;
