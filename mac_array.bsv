@@ -9,8 +9,10 @@ import fpu_common::*;
 import FIFO::*;
 import FloatingPoint::*;
 
+
 interface Ifc_conv;
 method Action top_cnn_input(Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
+method Vector#(2000, Reg#(Bit#(64))) output_array();
 endinterface
 
 
@@ -71,7 +73,8 @@ Vector#(4, Reg#(FloatingPoint#(11,52))) conv_psum7  <- replicateM( mkReg( 0 ) );
 Reg#(Bool) input_load <- mkReg(False);
 Reg#(Bit#(1)) rg_psum_received <- mkReg(0); 
 FIFO#(FloatingPoint#(11,52)) psum_fifo <- mkSizedFIFO(4);
-
+FIFO#(FloatingPoint#(11,52)) output_fifo <- mkFIFO();
+Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
 
      rule array_weight;
      mac_r1.take_input(weight,psum_in);
@@ -257,18 +260,23 @@ FIFO#(FloatingPoint#(11,52)) psum_fifo <- mkSizedFIFO(4);
      rule row9_input;
         mac_r9.load_input(_input9, input_load);
      endrule
-
+     Reg#(int) gg <-mkReg(0);
+     
      rule get_output9  ;
+     Bool flag=False;
      psum_out8[0] <= mac_r9.give(0);
      psum_out8[1] <= mac_r9.give(1);
      psum_out8[2] <= mac_r9.give(2);
      psum_out8[3] <= mac_r9.give(3);
-     if (psum_out8[0]!=0)
-       $display("TB9 output %0h  ", psum_out8[0]);
-     endrule
+     if (psum_out8[0]!=0) begin
+                final_output[gg]<=psum_out8[0];
+               $display("TB9 output %0h %0h %d ", psum_out8[0], final_output[gg]);
+               gg<=gg+1;
+               end
+       endrule
 
      method Action top_cnn_input(Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
-        
+      
          
         for (int m=0;m<4;m=m+1) begin
          weight[m]<=_weight1[m];
@@ -292,7 +300,9 @@ FIFO#(FloatingPoint#(11,52)) psum_fifo <- mkSizedFIFO(4);
          end
         input_load<= load;
    endmethod
-
+   method Vector#(2000, Reg#(Bit#(64))) output_array();
+     return final_output;
+     endmethod
 
 endmodule: mkmac_array
 

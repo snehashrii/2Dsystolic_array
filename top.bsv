@@ -27,6 +27,27 @@ datain: data
 };
 endfunction
 
+function Array#(Bit#(64)) searchable( Vector#(2000, Reg#(Bit#(64))) final_output);
+Bool flag=False;
+Bit#(64) _final[1024];
+int counter=0;
+
+for (int u=0;u<2000;u=u+1) begin
+   for(int z=0; z<counter;z=z+1) begin
+       if (_final[z]==final_output[u]) begin
+           flag=True;
+           end
+            end
+            if(flag!=True) begin
+               _final[counter]=final_output[u];
+               counter=counter+1;
+               end
+               else
+               flag=False;
+           end
+return _final;
+endfunction
+
 (*synthesize*)
 module top(Empty);
     Ifc_conv systolic <- mkmac_array();
@@ -65,6 +86,7 @@ module top(Empty);
     Reg#(int) k  <-  mkReg(0);
     Reg#(int) l_by_4 <- mkReg(0);
     FIFOF#(FloatingPoint#(11,52))  inputdataFifo <-  mkSizedFIFOF(36);
+    FIFOF#(int) indexFifo <-mkSizedFIFOF(36);
     Reg#(Bool) load_done <- mkReg(False);
     FloatingPoint#(11,52) input_data[32][32] = {{59, 43, 50, 68, 98, 119, 139, 145, 149, 149, 131, 125, 142, 144, 137, 129, 137, 134, 124, 139, 139, 133, 136, 139, 152, 163, 168, 159, 158, 158, 152, 148},
                                  {16, 0, 18, 51, 88, 120, 128, 127, 126, 116, 106, 101, 105, 113, 109, 112, 119, 109, 105, 125, 127, 122, 131, 124, 121, 131, 132, 133, 133, 123, 119, 122}, 
@@ -110,24 +132,41 @@ module top(Empty);
 Inps i1;
 input2=zero_padding(input_data);
 i1=im2col(input2, weight_kernel);
-int temp[36];
-
+int temp[256][36];
+for (int e=0;e<256;e=e+1) begin
 for (int b=0;b<9;b=b+1) begin
 for (int m=0;m<4;m=m+1) begin
-  temp[b*4+m]=i1.windows[b][m];
+  temp[e][b*4+m]=i1.windows[b][m+(4*e)];
   end
   end
+  end
+Reg#(int) _index <-mkReg(0);
+rule index_fifo (_index<256);
+   indexFifo.enq(temp[_index][i]);
+   if (i==35) begin
+      _index<=_index+1;
+      i<=0;
+    end
+    else
+      i<=i+1;
+ // $display("INDEX %d %d %d", _index, i, temp[_index][i]);
+  endrule
 let fconv <- mk_fpu_int_to_dp();
+Reg#(int) g<-mkReg(0);
 //Int#(32) bb[4];
 //bb=max_pooling(input_data1);
 //rule pool;
   //$display("POOLING %0d %0d %0d %0d", bb[0], bb[1], bb[2], bb[3]);
   //endrule
-rule datain (i<36);
-          Bit#(12) data_addr = truncate(pack(temp[i]));
-         // $display("data addr %d", data_addr);
+rule datain (!indexFifo.notFull && g <36);
+          Bit#(12) data_addr = truncate(pack(indexFifo.first));
+        //  $display("data addr %d", data_addr);
           dut1.portA.request.put(makeRequest(False, data_addr, 0));
-          i<=i+1;
+          if (g==35)
+             g<=0;
+          else
+             g<=g+1;
+          indexFifo.deq();
        endrule
 rule weights (read_index<9);
     let _e = stimulus.sub(read_index);
@@ -153,15 +192,22 @@ rule dataout  ;
           j<=j+1;
           if (j>=35) load_done<=True;
        endrule
-rule jhjg(j>1);
+Reg#(int) conv_cycle <-mkReg(0);
+rule jhjg(j>0 && conv_cycle<2);
   let x =  fconv.receive();  
       let valid = x.valid;
       let out = x.value;
       let flags = x.ex;
   Bit#(64) _out = {pack(out.sign), out.exp, out.sfd}; 
   let data2=FloatingPoint{sign : unpack(_out[`a4]), exp: _out[`a3:`a2], sfd: _out[`a1:0]};  
-  //$display("tell me this works %0h", _out);
-  inputdataFifo.enq(data2);
+  
+  if (conv_cycle==1) begin
+      inputdataFifo.enq(data2);
+     // $display("%d tell me this works %0h", j, data2);
+      conv_cycle<=0;
+      end
+  else 
+    conv_cycle<=conv_cycle+1;
   endrule
 
 rule clearing_fifo /*( !inputdataFifo.notFull)*/;
@@ -186,19 +232,41 @@ rule clearing_fifo /*( !inputdataFifo.notFull)*/;
        _input9[input_count-32]<=inputdataFifo.first;
    inputdataFifo.deq();
    // inputdataFifo.clear();
-   input_count<=input_count+1;
+   if (input_count==35)
+      input_count<=0;
+    else
+       input_count<=input_count+1;
    endrule
+Reg#(Bool) _disp<-mkReg(False);
 
+Reg#(Bit#(64)) rg_final[1024];
 //(*fire_when_enabled*)
 rule computation_engine (load_done==True );
   k<=k+1;
-  //$display("SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0], w2[0], w3[0], w4[0], w5[0], w6[0], w7[0],w8[0], w9[0]);
-  
+  Bit#(64) _final[1024];
+  //$display("SNEHA WEIGHT %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0],w2[0],w3[0],w4[0],w5[0],w6[0],w7[0],w8[0],w9[0]);
+  //$display("SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h", _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
   systolic.top_cnn_input(True, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
+  $display("INDEX %d %d %d", _index, i, temp[_index][i]);
   //$display("LESS GO %0d", k);
-  if (k>149) $finish(0);
+  if (k>1000) begin
+     _final=searchable(systolic.output_array);
+     for(int y=0;y<1024;y=y+1) begin
+         rg_final[y]<=_final[y];
+         end
+     _disp<=True;
+     end
 endrule
- 
+  Reg#(int) o_count<-mkReg(0);
+
+ rule display_output (_disp&&o_count<1024);
+    $display("OUTPUT %0h", rg_final[o_count]);
+    if (o_count==1023)
+        $finish(0);
+    else 
+     o_count<=o_count+1;
+     endrule
+   
 /* rule ce2(load_done==True && k<150 && l_by_4==1);
    k<=k+1;
   systolic1.top_cnn_input(True, i1.w1,i1.w2,i1.w3,i1.w4,i1.w5,i1.w6,i1.w7,i1.w8,i1.w9,window_by_4(l_by_4,i1.windows,0),window_by_4(l_by_4,i1.windows,1),window_by_4(l_by_4,i1.windows,2),window_by_4(l_by_4,i1.windows,3),window_by_4(l_by_4,i1.windows,4),window_by_4(l_by_4,i1.windows,5),window_by_4(l_by_4,i1.windows,6),window_by_4(l_by_4,i1.windows,7),window_by_4(l_by_4,i1.windows,8));

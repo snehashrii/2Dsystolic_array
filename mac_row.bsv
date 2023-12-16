@@ -53,8 +53,11 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
     
    
    rule loop (n < 4 && input_load==True);
-   // $display("%0h fifo",_input[n]);
+   // $display("%0h fifo %0h",_input[n]);
     inputFifo.enq(_input[n]);
+    if (n==3)
+     n<=0;
+    else
     n<=n+1;
   endrule
 
@@ -65,7 +68,7 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
      w14<=weight[3];
     // if (w11>0)
       // rg_inputs_tx<=1;
-   // $display("... weight %0h %0h %0h %0h %d", w11, w12, w13, w14, rg_inputs_tx);
+   //$display("... weight %0h %0h %0h %0h %d", w11, w12, w13, w14, rg_inputs_tx);
 
     endrule
 
@@ -75,7 +78,7 @@ FIFO#(Bit#(64)) output_fifo <- mkSizedFIFO(1);
      a12<=a11;
      a13<=a12;
      a14<=a13;
-    //$display(".... input %0h %0h %0h %0h", a11, a12, a13, a14);
+   // $display(".... input %0h %0h %0h %0h", a11, a12, a13, a14);
      inputFifo.deq;
     endrule
 
