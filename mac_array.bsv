@@ -263,15 +263,28 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      endrule
      Reg#(int) gg <-mkReg(0);
      
+     Vector#(1024, Reg#(Bit#(64))) uniq<-replicateM(mkReg(0));
      rule get_output9  ;
-     Bool flag=False;
      psum_out8[0] <= mac_r9.give(0);
      psum_out8[1] <= mac_r9.give(1);
      psum_out8[2] <= mac_r9.give(2);
      psum_out8[3] <= mac_r9.give(3);
      if (psum_out8[0]!=0) begin
-               $display("TB9 output %0h ", psum_out8[0]);
-               gg<=gg+1;
+               if (gg>3) begin
+                 $display("%d mic testing %0h %0h %0h %0h %0h", gg, psum_out8[0], uniq[0], uniq[gg-3], uniq[gg-2], uniq[gg-1]);
+                 if (psum_out8[0]!=uniq[gg-4] && psum_out8[0]!=uniq[gg-3]&& psum_out8[0]!=uniq[gg-2]&& psum_out8[0]!=uniq[gg-1]) begin
+                  uniq[gg]<=psum_out8[0];
+                  $display("%0h TB9 output %0h %0h %h", gg, psum_out8[0], uniq[gg], uniq[gg-1]);
+                   gg<=gg+1;
+               end
+               end
+               else
+               begin
+                 uniq[gg]<=psum_out8[0];
+                 $display("%0h TB9 output %0h %0h ", gg, psum_out8[0], uniq[gg]);
+                  
+                   gg<=gg+1;
+                   end
                end
        endrule
 

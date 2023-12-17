@@ -234,11 +234,12 @@ rule clearing_fifo /*( !inputdataFifo.notFull)*/;
    // inputdataFifo.clear();
    if (input_count==35) begin
       input_count<=0;
+     // load_done<=True;
       end
     else begin
        input_count<=input_count+1;
        end
-     /*  if(input_count>33 )
+     /* if(input_count>33 )
            load_done<=True;
        else
            load_done<=False;*/
@@ -246,14 +247,13 @@ rule clearing_fifo /*( !inputdataFifo.notFull)*/;
    endrule
 
 //(*fire_when_enabled*)
-rule computation_engine (load_done==True);
+rule computation_engine (load_done==True );
   k<=k+1;
   Bit#(64) _final[1024];
   //$display("SNEHA WEIGHT %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0],w2[0],w3[0],w4[0],w5[0],w6[0],w7[0],w8[0],w9[0]);
   $display("%d SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h",k, _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
   systolic.top_cnn_input(load_done, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
-  if (k>1000) $finish(0);
+  if(k>1000) $finish(0);
 endrule
-        
 
 endmodule
