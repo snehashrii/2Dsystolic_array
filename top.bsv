@@ -209,7 +209,7 @@ rule jhjg(j>0 && conv_cycle<2);
   else 
     conv_cycle<=conv_cycle+1;
   endrule
-
+  
 rule clearing_fifo /*( !inputdataFifo.notFull)*/;
    //$display("data from bram %0h",inputdataFifo.first);
    if (input_count<4)
@@ -232,48 +232,28 @@ rule clearing_fifo /*( !inputdataFifo.notFull)*/;
        _input9[input_count-32]<=inputdataFifo.first;
    inputdataFifo.deq();
    // inputdataFifo.clear();
-   if (input_count==35)
+   if (input_count==35) begin
       input_count<=0;
-    else
+      end
+    else begin
        input_count<=input_count+1;
+       end
+     /*  if(input_count>33 )
+           load_done<=True;
+       else
+           load_done<=False;*/
+       systolic.load_input(load_done);
    endrule
-Reg#(Bool) _disp<-mkReg(False);
 
-Reg#(Bit#(64)) rg_final[1024];
 //(*fire_when_enabled*)
-rule computation_engine (load_done==True );
+rule computation_engine (load_done==True);
   k<=k+1;
   Bit#(64) _final[1024];
   //$display("SNEHA WEIGHT %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0],w2[0],w3[0],w4[0],w5[0],w6[0],w7[0],w8[0],w9[0]);
-  //$display("SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h", _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
-  systolic.top_cnn_input(True, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
-  $display("INDEX %d %d %d", _index, i, temp[_index][i]);
-  //$display("LESS GO %0d", k);
-  if (k>1000) begin
-     _final=searchable(systolic.output_array);
-     for(int y=0;y<1024;y=y+1) begin
-         rg_final[y]<=_final[y];
-         end
-     _disp<=True;
-     end
+  $display("%d SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h",k, _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
+  systolic.top_cnn_input(load_done, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
+  if (k>1000) $finish(0);
 endrule
-  Reg#(int) o_count<-mkReg(0);
+        
 
- rule display_output (_disp&&o_count<1024);
-    $display("OUTPUT %0h", rg_final[o_count]);
-    if (o_count==1023)
-        $finish(0);
-    else 
-     o_count<=o_count+1;
-     endrule
-   
-/* rule ce2(load_done==True && k<150 && l_by_4==1);
-   k<=k+1;
-  systolic1.top_cnn_input(True, i1.w1,i1.w2,i1.w3,i1.w4,i1.w5,i1.w6,i1.w7,i1.w8,i1.w9,window_by_4(l_by_4,i1.windows,0),window_by_4(l_by_4,i1.windows,1),window_by_4(l_by_4,i1.windows,2),window_by_4(l_by_4,i1.windows,3),window_by_4(l_by_4,i1.windows,4),window_by_4(l_by_4,i1.windows,5),window_by_4(l_by_4,i1.windows,6),window_by_4(l_by_4,i1.windows,7),window_by_4(l_by_4,i1.windows,8));
- // $display("LESS GO %0d", k);
-  if (k>149) begin
-   l_by_4<=l_by_4+1;
-   k<=0;
-   end
-endrule*/
 endmodule

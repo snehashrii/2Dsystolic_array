@@ -12,7 +12,7 @@ import FloatingPoint::*;
 
 interface Ifc_conv;
 method Action top_cnn_input(Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
-method Vector#(2000, Reg#(Bit#(64))) output_array();
+method Action load_input(Bool load);
 endinterface
 
 
@@ -81,7 +81,7 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      endrule
      
      rule row1_input;
-       // $display("rROW 1 FIFO");
+       //$display("loading 1 %d", input_load);
         mac_r1.load_input(_input, input_load);
      endrule
 
@@ -103,6 +103,7 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      endrule
 
      rule row2_input;
+      //  $display("loading 2 %d", input_load);
         mac_r2.load_input(_input2, input_load);
      endrule
 
@@ -269,8 +270,7 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      psum_out8[2] <= mac_r9.give(2);
      psum_out8[3] <= mac_r9.give(3);
      if (psum_out8[0]!=0) begin
-                final_output[gg]<=psum_out8[0];
-               $display("TB9 output %0h %0h %d ", psum_out8[0], final_output[gg]);
+               $display("TB9 output %0h ", psum_out8[0]);
                gg<=gg+1;
                end
        endrule
@@ -298,12 +298,11 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
          _input8[m]<=in8[m];
          _input9[m]<=in9[m];
          end
-        input_load<= load;
    endmethod
-   method Vector#(2000, Reg#(Bit#(64))) output_array();
-     return final_output;
-     endmethod
-
+   method Action load_input(Bool load);
+       
+        input_load<= load;
+        endmethod
 endmodule: mkmac_array
 
 endpackage:mac_array
