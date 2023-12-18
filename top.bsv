@@ -50,8 +50,7 @@ endfunction
 
 (*synthesize*)
 module top(Empty);
-    Ifc_conv systolic <- mkmac_array();
-    Ifc_conv systolic1 <- mkmac_array();
+     Ifc_conv systolic <- mkmac_array();
     Vector#(32, Reg#(Bit#(32))) ff <-replicateM( mkReg( 0 ) );
     Reg#(int) c2 <- mkReg(0);
      RegFile#(Bit#(12) , FloatingPoint#(11,52)) stimulus <- mkRegFileLoad("weights.txt", 0, 1024);
@@ -88,6 +87,7 @@ module top(Empty);
     FIFOF#(FloatingPoint#(11,52))  inputdataFifo <-  mkSizedFIFOF(36);
     FIFOF#(int) indexFifo <-mkSizedFIFOF(36);
     Reg#(Bool) load_done <- mkReg(False);
+    Reg#(Bool) fifo_valid <- mkReg(False);
     FloatingPoint#(11,52) input_data[32][32] = {{59, 43, 50, 68, 98, 119, 139, 145, 149, 149, 131, 125, 142, 144, 137, 129, 137, 134, 124, 139, 139, 133, 136, 139, 152, 163, 168, 159, 158, 158, 152, 148},
                                  {16, 0, 18, 51, 88, 120, 128, 127, 126, 116, 106, 101, 105, 113, 109, 112, 119, 109, 105, 125, 127, 122, 131, 124, 121, 131, 132, 133, 133, 123, 119, 122}, 
                                  {25, 16, 49, 83, 110, 129, 130, 121, 113, 112, 112, 106, 105, 128, 124, 130, 127, 122, 115, 120, 130, 131, 139, 127, 126, 127, 130, 142, 130, 118, 120, 109}, 
@@ -160,7 +160,7 @@ Reg#(int) g<-mkReg(0);
   //endrule
 rule datain (!indexFifo.notFull && g <36);
           Bit#(12) data_addr = truncate(pack(indexFifo.first));
-        //  $display("data addr %d", data_addr);
+         // $display("data addr %d", data_addr);
           dut1.portA.request.put(makeRequest(False, data_addr, 0));
           if (g==35)
              g<=0;
@@ -193,6 +193,7 @@ rule dataout  ;
           if (j>=35) load_done<=True;
        endrule
 Reg#(int) conv_cycle <-mkReg(0);
+Reg#(Bool) output_status <- mkReg(True);
 rule jhjg(j>0 && conv_cycle<2);
   let x =  fconv.receive();  
       let valid = x.valid;
@@ -210,8 +211,10 @@ rule jhjg(j>0 && conv_cycle<2);
     conv_cycle<=conv_cycle+1;
   endrule
   
-rule clearing_fifo /*( !inputdataFifo.notFull)*/;
-   //$display("data from bram %0h",inputdataFifo.first);
+  Reg#(int) new_input <- mkReg(0);
+
+rule clearing_fifo ;
+   $display("%d %d data from bram %0h",output_status, input_count,inputdataFifo.first);
    if (input_count<4)
        _input[input_count]<=inputdataFifo.first;
    else if (input_count<8)
@@ -230,30 +233,30 @@ rule clearing_fifo /*( !inputdataFifo.notFull)*/;
        _input8[input_count-28]<=inputdataFifo.first;
    else if (input_count<36)
        _input9[input_count-32]<=inputdataFifo.first;
-   inputdataFifo.deq();
-   // inputdataFifo.clear();
-   if (input_count==35) begin
-      input_count<=0;
-     // load_done<=True;
+   
+       
+    if (input_count==36) begin
+           //inputdataFifo.deq();
+           input_count<=0;
+           new_input<=new_input+1;
+      fifo_valid<=True;
       end
     else begin
+      inputdataFifo.deq();
        input_count<=input_count+1;
+       fifo_valid<=False;
        end
-     /* if(input_count>33 )
-           load_done<=True;
-       else
-           load_done<=False;*/
-       systolic.load_input(load_done);
    endrule
 
 //(*fire_when_enabled*)
-rule computation_engine (load_done==True );
-  k<=k+1;
+rule computation_engine (load_done==True && fifo_valid );
+       k<=k+1;
   Bit#(64) _final[1024];
   //$display("SNEHA WEIGHT %0h %0h %0h %0h %0h %0h %0h %0h %0h", w1[0],w2[0],w3[0],w4[0],w5[0],w6[0],w7[0],w8[0],w9[0]);
-  $display("%d SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h",k, _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
-  systolic.top_cnn_input(load_done, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
-  if(k>1000) $finish(0);
+  $display("%d SNEHA %0h %0h %0h %0h %0h %0h %0h %0h %0h",new_input, _input[0],_input2[0],_input3[0],_input4[0],_input5[0],_input6[0],_input7[0],_input8[0],_input9[0]);
+  systolic.top_cnn_input(new_input, True, w1,w2,w3,w4,w5,w6,w7,w8,w9,_input,_input2,_input3,_input4,_input5,_input6,_input7,_input8,_input9);
+  if(k>50) $finish(0);
 endrule
+
 
 endmodule

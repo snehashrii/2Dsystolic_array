@@ -8,13 +8,12 @@ import fpu_common::*;
   `define a4 63
 import FIFO::*;
 import FloatingPoint::*;
-
-
+import FIFOF::*;
 interface Ifc_conv;
-method Action top_cnn_input(Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
+method Action top_cnn_input(Reg#(int) _new_input, Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
 method Action load_input(Bool load);
+method Bool output_status();
 endinterface
-
 
 module mkmac_array(Ifc_conv);
      Ifc_mac_row mac_r1 <- mkmac_row();
@@ -49,6 +48,17 @@ Vector#(4, Reg#(FloatingPoint#(11,52))) _input7 <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(FloatingPoint#(11,52))) _input8 <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(FloatingPoint#(11,52))) _input9 <- replicateM( mkReg( 0 ) );
 
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input2 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input3 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input4 <- mkSizedFIFO(500);
+
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input5 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input6 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input7 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input8 <- mkSizedFIFO(500);
+FIFO#(Vector#(4, FloatingPoint#(11, 52))) fifo_input9 <- mkSizedFIFO(500);
+
 Vector#(4, Reg#(FloatingPoint#(11,52))) psum_in <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(64))) psum_out <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(Bit#(64))) psum_out1 <- replicateM( mkReg( 0 ) );
@@ -70,19 +80,24 @@ Vector#(4, Reg#(FloatingPoint#(11,52))) conv_psum5  <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(FloatingPoint#(11,52))) conv_psum6  <- replicateM( mkReg( 0 ) );
 Vector#(4, Reg#(FloatingPoint#(11,52))) conv_psum7  <- replicateM( mkReg( 0 ) );
 
+          Reg#(int) new_input <-mkReg(0);
+          Reg#(int) next_stage<-mkReg(0);
+          Reg#(int) previous_new_input<-mkReg(0);
 Reg#(Bool) input_load <- mkReg(False);
+Reg#(Bool) fifo_clear <- mkReg(False);
 Reg#(Bit#(1)) rg_psum_received <- mkReg(0); 
-FIFO#(FloatingPoint#(11,52)) psum_fifo <- mkSizedFIFO(4);
-FIFO#(FloatingPoint#(11,52)) output_fifo <- mkFIFO();
+FIFOF#(Bit#(64)) psum_fifo <- mkSizedFIFOF(4);
 Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
+Reg#(Bool) multi_fifo_loaded<-mkReg(False);
 
      rule array_weight;
      mac_r1.take_input(weight,psum_in);
      endrule
      
-     rule row1_input;
-       //$display("loading 1 %d", input_load);
-        mac_r1.load_input(_input, input_load);
+     rule row1_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+       //$display("loading 1 %d %d %0h", next_stage, previous_new_input, fifo_input.first[0]);
+        mac_r1.load_input(fifo_input.first, input_load,(next_stage==1));
+        fifo_input.deq();
      endrule
 
      rule getoutput;
@@ -102,9 +117,10 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
       mac_r2.take_input(weight2,conv_psum);
      endrule
 
-     rule row2_input;
+     rule row2_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
       //  $display("loading 2 %d", input_load);
-        mac_r2.load_input(_input2, input_load);
+        mac_r2.load_input(fifo_input2.first, input_load,(next_stage==1));
+        fifo_input2.deq();
      endrule
 
       rule getoutput2;
@@ -125,9 +141,10 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r3.take_input(weight3,conv_psum1);
      endrule
      
-     rule row3_input;
+     rule row3_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
        // $display("rROW 3 FIFO");
-        mac_r3.load_input(_input3, input_load);
+        mac_r3.load_input(fifo_input3.first, input_load,(next_stage==1));
+        fifo_input3.deq();
      endrule
 
      rule get_output3;
@@ -148,9 +165,12 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r4.take_input(weight4,conv_psum2);
      endrule
      
-     rule row4_input;
+     rule row4_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
        // $display("rROW 4 FIFO");
-        mac_r4.load_input(_input4, input_load);
+
+      // $display("loading 1 %d %d %0h", next_stage, multi_fifo_loaded, fifo_input4.first[0]);
+        mac_r4.load_input(fifo_input4.first, input_load,(next_stage==1));
+        fifo_input4.deq();
      endrule
 
      rule get_output4;
@@ -170,8 +190,10 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r5.take_input(weight5,conv_psum3);
      endrule
      
-     rule row5_input;
-        mac_r5.load_input(_input5, input_load);
+     rule row5_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+      //  $display("loading 1 %d %d %0h", next_stage, multi_fifo_loaded, fifo_input5.first[0]);
+        mac_r5.load_input(fifo_input5.first, input_load,(next_stage==1));
+        fifo_input5.deq();
      endrule
 
      rule get_output5;
@@ -192,8 +214,9 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r6.take_input(weight6,conv_psum4);
      endrule
      
-     rule row6_input;
-        mac_r6.load_input(_input6, input_load);
+     rule row6_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+        mac_r6.load_input(fifo_input6.first, input_load,(next_stage==1));
+        fifo_input6.deq();
      endrule
 
      rule get_output6;
@@ -214,8 +237,9 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r7.take_input(weight7,conv_psum5);
      endrule
      
-     rule row7_input;
-        mac_r7.load_input(_input7, input_load);
+     rule row7_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+        mac_r7.load_input(fifo_input7.first, input_load,(next_stage==1));
+        fifo_input7.deq();
      endrule
 
      rule get_output7;
@@ -236,8 +260,9 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r8.take_input(weight8,conv_psum6);
      endrule
      
-     rule row8_input;
-        mac_r8.load_input(_input8, input_load);
+     rule row8_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+        mac_r8.load_input(fifo_input8.first, input_load,(next_stage==1));
+        fifo_input8.deq();
      endrule
 
      rule get_output8;
@@ -258,39 +283,70 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
      mac_r9.take_input(weight9,conv_psum7);
      endrule
      
-     rule row9_input;
-        mac_r9.load_input(_input9, input_load);
+     rule row9_input ((next_stage==1||previous_new_input==1)&&(multi_fifo_loaded==True));
+        mac_r9.load_input(fifo_input9.first, input_load,(next_stage==1));
+        fifo_input9.deq();
      endrule
      Reg#(int) gg <-mkReg(0);
      
      Vector#(1024, Reg#(Bit#(64))) uniq<-replicateM(mkReg(0));
-     rule get_output9  ;
+
+     rule get_output9   ;
      psum_out8[0] <= mac_r9.give(0);
      psum_out8[1] <= mac_r9.give(1);
      psum_out8[2] <= mac_r9.give(2);
      psum_out8[3] <= mac_r9.give(3);
      if (psum_out8[0]!=0) begin
-               if (gg>3) begin
-                 $display("%d mic testing %0h %0h %0h %0h %0h", gg, psum_out8[0], uniq[0], uniq[gg-3], uniq[gg-2], uniq[gg-1]);
-                 if (psum_out8[0]!=uniq[gg-4] && psum_out8[0]!=uniq[gg-3]&& psum_out8[0]!=uniq[gg-2]&& psum_out8[0]!=uniq[gg-1]) begin
-                  uniq[gg]<=psum_out8[0];
-                  $display("%0h TB9 output %0h %0h %h", gg, psum_out8[0], uniq[gg], uniq[gg-1]);
-                   gg<=gg+1;
-               end
-               end
-               else
-               begin
-                 uniq[gg]<=psum_out8[0];
-                 $display("%0h TB9 output %0h %0h ", gg, psum_out8[0], uniq[gg]);
-                  
-                   gg<=gg+1;
-                   end
+               psum_fifo.enq(psum_out8[0]);
+               $display(" TESTING %0h ", psum_out8[0]);
                end
        endrule
 
-     method Action top_cnn_input(Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
+          rule aa;
+            Vector::Vector#(4, FloatingPoint#(11, 52)) i1, i2,i3,i4,i5,i6,i7,i8,i9;
+            for (int r=0;r<4;r=r+1) begin
+             i1[r]=_input[r];
+             i2[r]=_input2[r];
+             i3[r]=_input3[r];
+             i4[r]=_input4[r];
+             i5[r]=_input5[r];
+             i6[r]=_input6[r];
+             i7[r]=_input7[r];
+             i8[r]=_input8[r];
+             i9[r]=_input9[r];
+             end
+            if (new_input>previous_new_input || previous_new_input==1) begin
+               fifo_input.enq(i1);
+               fifo_input2.enq(i2);
+               fifo_input3.enq(i3);
+               fifo_input4.enq(i4);
+               fifo_input5.enq(i5);
+               fifo_input6.enq(i6);
+               fifo_input7.enq(i7);
+               fifo_input8.enq(i8);
+               fifo_input9.enq(i9);
+               previous_new_input<=new_input;
+               multi_fifo_loaded<=True;
+              // $display(" new inputs %0h %0h", i4[0], i5[0]);
+               end
+               if(!psum_fifo.notFull) begin
+                  next_stage<=1;
+                  end
+                  else
+                  next_stage<=0;
+              
+                  $display("gggg %0d %d %0d", next_stage, !psum_fifo.notFull, previous_new_input);
+               
+               endrule
+      Reg#(int) k<-mkReg(0);
       
-         
+     (*descending_urgency="get_output9, aa, df"*)
+      rule df (!psum_fifo.notFull ) ;
+                psum_fifo.clear();
+               endrule
+     method Action top_cnn_input(Reg#(int) _new_input, Bool load, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight1, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight2, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight3, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight4, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight5,  Vector#(4, Reg#(FloatingPoint#(11,52))) _weight6, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight7, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight8, Vector#(4, Reg#(FloatingPoint#(11,52))) _weight9, Vector#(4, Reg#(FloatingPoint#(11, 52))) in1, Vector#(4, Reg#(FloatingPoint#(11, 52))) in2, Vector#(4, Reg#(FloatingPoint#(11, 52))) in3, Vector#(4, Reg#(FloatingPoint#(11, 52))) in4, Vector#(4, Reg#(FloatingPoint#(11, 52))) in5, Vector#(4, Reg#(FloatingPoint#(11, 52))) in6, Vector#(4, Reg#(FloatingPoint#(11, 52))) in7, Vector#(4, Reg#(FloatingPoint#(11, 52))) in8, Vector#(4, Reg#(FloatingPoint#(11, 52))) in9);
+      input_load<= load;
+      new_input<=_new_input;
         for (int m=0;m<4;m=m+1) begin
          weight[m]<=_weight1[m];
          weight2[m]<=_weight2[m];
@@ -313,8 +369,11 @@ Vector#(2000, Reg#(Bit#(64))) final_output<-replicateM(mkReg(0)) ;
          end
    endmethod
    method Action load_input(Bool load);
-       
-        input_load<= load;
+         if (load) 
+            fifo_clear<=True;
+        endmethod
+   method Bool output_status();
+        return psum_fifo.notFull;
         endmethod
 endmodule: mkmac_array
 
